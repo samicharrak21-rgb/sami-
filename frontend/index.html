@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cinemai SaaS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; background:#141414; color:#fff; }
+    .hero { min-height: 88vh; background-size:cover; background-position:center; }
+    .glass { background: rgba(18,18,18,.82); backdrop-filter: blur(14px); }
+    .light body, body.light { background:#f4f4f4; color:#121212; }
+    .light .card, body.light .card, .light .glass, body.light .glass { background: rgba(255,255,255,.85); color:#111; }
+  </style>
+</head>
+<body>
+  <header class="fixed top-0 inset-x-0 z-50 bg-black/80 border-b border-white/10 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="text-2xl">🎬</div>
+        <div>
+          <div class="text-2xl font-extrabold text-red-600">Cinemai</div>
+          <div class="text-xs text-white/50">Netflix-style SaaS Starter</div>
+        </div>
+      </div>
+      <nav class="hidden md:flex items-center gap-5 text-sm text-white/80">
+        <button onclick="scrollToId('catalog')">Catalog</button>
+        <button onclick="scrollToId('continue')">Continue</button>
+        <button onclick="scrollToId('servers')">Servers</button>
+      </nav>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleTheme()" class="px-3 py-2 rounded-xl bg-white/10">🌙</button>
+        <select id="lang" onchange="setLang(this.value)" class="bg-zinc-900 border border-white/10 rounded-xl px-3 py-2">
+          <option value="ar">AR</option>
+          <option value="en">EN</option>
+          <option value="fr">FR</option>
+        </select>
+        <button id="authBtn" onclick="openAuth()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl font-bold">Login</button>
+        <button id="settingsBtn" onclick="openSettings()" class="hidden bg-white/10 px-4 py-2 rounded-xl">Settings</button>
+        <button id="adminBtn" onclick="openAdmin()" class="hidden bg-white/10 px-4 py-2 rounded-xl">Admin</button>
+      </div>
+    </div>
+  </header>
+
+  <section id="hero" class="hero relative flex items-end pt-24">
+    <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/25"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent"></div>
+    <div class="relative z-10 max-w-7xl mx-auto px-4 pb-14 w-full">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center rounded-full px-4 py-2 bg-white/10 border border-white/10 mb-4">Ready for deployment</div>
+        <h1 id="heroTitle" class="text-5xl md:text-7xl font-black mb-4">Cinemai Originals</h1>
+        <p id="heroText" class="text-lg text-white/80 mb-6">Complete starter with accounts, profiles, admin, PostgreSQL, Docker and HLS playback.</p>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="playFeatured()" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-2xl font-bold">Watch</button>
+          <button onclick="scrollToId('catalog')" class="bg-white/10 border border-white/10 px-6 py-3 rounded-2xl font-bold">Browse</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-4 py-10 space-y-14">
+    <section id="profilesWrap" class="card glass rounded-3xl p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold">Profiles</h2>
+        <button onclick="addProfile()" class="bg-white/10 px-4 py-2 rounded-xl">Add</button>
+      </div>
+      <div id="profiles" class="flex flex-wrap gap-4"></div>
+    </section>
+
+    <section id="catalog">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-2xl font-bold">Catalog</h2>
+        <input id="search" oninput="renderCatalog()" placeholder="Search" class="w-56 bg-zinc-900 border border-white/10 rounded-xl px-4 py-2" />
+      </div>
+      <div id="catalogGrid" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-5"></div>
+    </section>
+
+    <section id="continue">
+      <h2 class="text-2xl font-bold mb-5">Continue Watching</h2>
+      <div id="continueGrid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+    </section>
+
+    <section id="servers">
+      <h2 class="text-2xl font-bold mb-5">Streaming Servers</h2>
+      <div id="serversGrid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+    </section>
+  </main>
+
+  <div id="overlay" class="hidden fixed inset-0 bg-black/70 z-[99]"></div>
+
+  <section id="authPanel" class="hidden fixed top-0 left-0 z-[100] h-full w-full md:w-[420px] glass p-6 border-r border-white/10">
+    <div class="flex items-center justify-between mb-6"><h3 class="text-2xl font-bold">Login / Register</h3><button onclick="closePanels()">✕</button></div>
+    <div class="space-y-3">
+      <input id="authName" placeholder="Name" class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+      <input id="authEmail" placeholder="Email" class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+      <input id="authPassword" type="password" placeholder="Password" class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="register()" class="bg-red-600 px-4 py-3 rounded-2xl font-bold">Register</button>
+        <button onclick="login()" class="bg-white/10 px-4 py-3 rounded-2xl font-bold">Login</button>
+      </div>
+      <div class="text-sm text-white/60">Admin: admin@cinemai.local / Admin@12345</div>
+    </div>
+  </section>
+
+  <section id="settingsPanel" class="hidden fixed top-0 left-0 z-[100] h-full w-full md:w-[440px] glass p-6 border-r border-white/10">
+    <div class="flex items-center justify-between mb-6"><h3 class="text-2xl font-bold">Settings</h3><button onclick="closePanels()">✕</button></div>
+    <div class="space-y-3">
+      <input id="settingsName" placeholder="Name" class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+      <select id="settingsLang" class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3"><option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option></select>
+      <select id="settingsTheme" class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3"><option value="dark">Dark</option><option value="light">Light</option></select>
+      <button onclick="saveSettings()" class="bg-red-600 px-4 py-3 rounded-2xl font-bold">Save</button>
+    </div>
+  </section>
+
+  <section id="adminPanel" class="hidden fixed top-0 left-0 z-[100] h-full w-full md:w-[620px] glass p-6 border-r border-white/10 overflow-y-auto">
+    <div class="flex items-center justify-between mb-6"><h3 class="text-2xl font-bold">Admin</h3><button onclick="closePanels()">✕</button></div>
+    <div class="space-y-6">
+      <div class="bg-zinc-950/70 border border-white/10 rounded-3xl p-4">
+        <h4 class="font-bold mb-3">Add Server</h4>
+        <div class="grid md:grid-cols-2 gap-3">
+          <input id="serverName" placeholder="Name" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <input id="serverRegion" placeholder="Region" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <input id="serverProvider" placeholder="Provider" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <input id="serverBaseUrl" placeholder="Base URL" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+        </div>
+        <button onclick="createServer()" class="mt-4 bg-red-600 px-4 py-3 rounded-2xl font-bold">Save Server</button>
+      </div>
+      <div class="bg-zinc-950/70 border border-white/10 rounded-3xl p-4">
+        <h4 class="font-bold mb-3">Add Catalog Item</h4>
+        <div class="grid md:grid-cols-2 gap-3">
+          <input id="catTitle" placeholder="Title" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <select id="catType" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3"><option value="movie">movie</option><option value="series">series</option></select>
+          <input id="catPoster" placeholder="Poster URL" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <input id="catBackdrop" placeholder="Backdrop URL" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <input id="catYear" placeholder="Year" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <input id="catLanguage" placeholder="Content Language" value="ar" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3" />
+          <textarea id="catOverview" placeholder="Overview" class="md:col-span-2 bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3"></textarea>
+        </div>
+        <button onclick="createCatalog()" class="mt-4 bg-red-600 px-4 py-3 rounded-2xl font-bold">Save Item</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="playerModal" class="hidden fixed inset-0 z-[110] bg-black/90 p-4 md:p-8 overflow-y-auto">
+    <div class="max-w-6xl mx-auto glass rounded-[28px] overflow-hidden border border-white/10">
+      <div class="relative aspect-video bg-black"><video id="player" class="w-full h-full" controls playsinline></video><button onclick="closePlayer()" class="absolute top-4 left-4 bg-black/60 w-12 h-12 rounded-full text-2xl">✕</button></div>
+      <div class="p-6 grid lg:grid-cols-[1fr_340px] gap-6">
+        <div>
+          <div class="flex items-start justify-between gap-4 mb-4"><div><h2 id="playerTitle" class="text-3xl font-extrabold mb-2"></h2><p id="playerOverview" class="text-white/75 leading-8"></p></div><button onclick="toggleFavoriteCurrent()" class="bg-white/10 px-4 py-3 rounded-2xl">❤</button></div>
+          <div class="grid md:grid-cols-2 gap-4"><div><label class="block text-sm text-white/60 mb-2">Source</label><select id="sourceSelect" onchange="switchSource()" class="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3"></select></div><div><label class="block text-sm text-white/60 mb-2">Status</label><div id="playerStatus" class="bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3">Ready</div></div></div>
+        </div>
+        <img id="playerPoster" class="w-full rounded-3xl aspect-[2/3] object-cover bg-zinc-900" />
+      </div>
+    </div>
+  </section>
+
+<script>
+const state = { token: localStorage.getItem('token') || '', user: null, profiles: [], activeProfile: null, catalog: [], servers: [], progress: [], favorites: [], currentItem: null, sources: [], hls: null, theme: localStorage.getItem('theme') || 'dark' };
+const api = path => `/api${path}`;
+const authHeaders = () => state.token ? { Authorization: `Bearer ${state.token}` } : {};
+const toast = m => alert(m);
+const $ = s => document.querySelector(s);
+function scrollToId(id){ document.getElementById(id)?.scrollIntoView({behavior:'smooth'}); }
+function closePanels(){ ['authPanel','settingsPanel','adminPanel'].forEach(id => document.getElementById(id).classList.add('hidden')); $('#overlay').classList.add('hidden'); }
+function openAuth(){ $('#overlay').classList.remove('hidden'); $('#authPanel').classList.remove('hidden'); }
+function openSettings(){ if (!state.user) return openAuth(); $('#settingsName').value = state.user.name || ''; $('#settingsLang').value = state.user.preferred_language || 'ar'; $('#settingsTheme').value = state.user.theme || state.theme; $('#overlay').classList.remove('hidden'); $('#settingsPanel').classList.remove('hidden'); }
+function openAdmin(){ if (!state.user || state.user.role !== 'admin') return toast('Admin only'); $('#overlay').classList.remove('hidden'); $('#adminPanel').classList.remove('hidden'); }
+function setLang(v){ document.documentElement.lang = v; document.documentElement.dir = v === 'ar' ? 'rtl' : 'ltr'; localStorage.setItem('lang', v); }
+function toggleTheme(){ state.theme = state.theme === 'dark' ? 'light' : 'dark'; applyTheme(); }
+function applyTheme(){ localStorage.setItem('theme', state.theme); document.body.classList.toggle('light', state.theme === 'light'); }
+
+async function http(path, options = {}) {
+  const res = await fetch(api(path), { headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(options.headers || {}) }, ...options });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function bootstrap(){
+  applyTheme();
+  setLang(localStorage.getItem('lang') || 'ar');
+  $('#lang').value = localStorage.getItem('lang') || 'ar';
+  await loadCatalog();
+  await loadServers();
+  if (state.token) { await loadMe().catch(() => logout()); await loadProgress(); await loadFavorites(); }
+}
+
+async function loadCatalog(){ state.catalog = await http('/catalog'); renderHero(); renderCatalog(); }
+async function loadServers(){ state.servers = await http('/servers'); renderServers(); }
+async function loadMe(){ const data = await http('/auth/me'); state.user = data.user; state.profiles = data.profiles; state.activeProfile = state.profiles[0] || null; state.theme = data.user.theme || state.theme; applyTheme(); $('#authBtn').classList.add('hidden'); $('#settingsBtn').classList.remove('hidden'); if (state.user.role === 'admin') $('#adminBtn').classList.remove('hidden'); renderProfiles(); }
+async function loadProgress(){ state.progress = await http('/progress'); renderProgress(); }
+async function loadFavorites(){ state.favorites = await http('/favorites'); }
+
+function renderHero(){ const item = state.catalog[0]; if (!item) return; $('#hero').style.backgroundImage = item.backdrop_url ? `url(${item.backdrop_url})` : 'linear-gradient(45deg,#111,#000)'; $('#heroTitle').textContent = item.title; $('#heroText').textContent = item.overview || ''; }
+function card(item){ return `<div class="card bg-zinc-900 rounded-3xl overflow-hidden border border-white/5 cursor-pointer" onclick='openPlayer(${JSON.stringify(item).replace(/'/g,"&apos;")})'><img src="${item.poster_url || 'https://placehold.co/400x600?text=Poster'}" class="w-full aspect-[2/3] object-cover"><div class="p-4"><div class="font-bold line-clamp-2 mb-2">${item.title}</div><div class="text-sm text-white/55">${item.media_type} • ${item.year || ''}</div></div></div>`; }
+function renderCatalog(){ const q = ($('#search').value || '').toLowerCase(); $('#catalogGrid').innerHTML = state.catalog.filter(x => x.title.toLowerCase().includes(q)).map(card).join(''); }
+function renderServers(){ $('#serversGrid').innerHTML = state.servers.map(s => `<div class="card glass rounded-3xl p-5 border border-white/10"><div class="text-xl font-bold mb-2">${s.name}</div><div class="text-white/70 mb-1">${s.provider || ''}</div><div class="text-white/60 text-sm mb-1">${s.region || ''}</div><div class="text-white/50 text-sm break-all">${s.base_url}</div><div class="mt-3 inline-flex px-3 py-1 rounded-full bg-emerald-600/20 text-emerald-400">${s.health_status}</div></div>`).join(''); }
+function renderProfiles(){ $('#profiles').innerHTML = state.profiles.map(p => `<button onclick="selectProfile(${p.id})" class="px-5 py-4 rounded-2xl border ${state.activeProfile?.id===p.id?'border-red-500 bg-red-600/15':'border-white/10 bg-white/5'}">${p.avatar} ${p.name}</button>`).join(''); }
+function renderProgress(){ if (!state.progress.length) { $('#continueGrid').innerHTML = '<div class="text-white/50">No history yet.</div>'; return; } $('#continueGrid').innerHTML = state.progress.map(p => `<div class="card glass rounded-3xl p-4 border border-white/10"><div class="flex gap-4"><img src="${p.poster_url || 'https://placehold.co/300x450?text=Poster'}" class="w-24 rounded-2xl aspect-[2/3] object-cover"><div class="flex-1"><div class="font-bold mb-1">${p.title}</div><div class="text-sm text-white/60 mb-2">${p.media_type}</div><div class="text-sm text-white/50 mb-3">${p.progress_seconds}s / ${p.duration_seconds}s</div><button onclick="openPlayerById(${p.catalog_id})" class="bg-red-600 px-4 py-2 rounded-xl">Resume</button></div></div></div>`).join(''); }
+function selectProfile(id){ state.activeProfile = state.profiles.find(p => p.id === id); renderProfiles(); }
+async function addProfile(){ if (!state.user) return openAuth(); const name = prompt('Profile name'); if (!name) return; await http('/profiles', { method:'POST', body: JSON.stringify({ name, avatar:'🎭', is_kids:false }) }); await loadMe(); }
+function playFeatured(){ if (state.catalog[0]) openPlayer(state.catalog[0]); }
+function openPlayerById(id){ const item = state.catalog.find(x => x.id === id); if (item) openPlayer(item); }
+
+async function openPlayer(item){
+  if (typeof item === 'string') item = JSON.parse(item.replace(/&apos;/g, "'"));
+  state.currentItem = item;
+  $('#playerTitle').textContent = item.title; $('#playerOverview').textContent = item.overview || ''; $('#playerPoster').src = item.poster_url || 'https://placehold.co/400x600?text=Poster';
+  state.sources = await http(`/catalog/${item.id}/sources`);
+  $('#sourceSelect').innerHTML = state.sources.map((s,i) => `<option value="${i}">${s.label} - ${s.quality}</option>`).join('');
+  document.getElementById('playerModal').classList.remove('hidden');
+  switchSource();
+}
+
+function switchSource(){
+  const src = state.sources[Number($('#sourceSelect').value || 0)]; if (!src) return;
+  const video = $('#player');
+  if (state.hls) { state.hls.destroy(); state.hls = null; }
+  if (video.canPlayType('application/vnd.apple.mpegurl')) video.src = src.playback_url;
+  else if (window.Hls?.isSupported()) { state.hls = new Hls(); state.hls.loadSource(src.playback_url); state.hls.attachMedia(video); }
+  else video.src = src.playback_url;
+  video.play().catch(()=>{});
+  $('#playerStatus').textContent = `Playing from ${src.server_name || 'external'} • ${src.quality}`;
+}
+function closePlayer(){ document.getElementById('playerModal').classList.add('hidden'); const v = $('#player'); v.pause(); if (state.hls) { state.hls.destroy(); state.hls = null; } }
+$('#player').addEventListener('timeupdate', async () => { if (!state.user || !state.currentItem) return; try { await http('/progress', { method:'POST', body: JSON.stringify({ catalog_id: state.currentItem.id, profile_id: state.activeProfile?.id || null, progress_seconds: Math.floor($('#player').currentTime || 0), duration_seconds: Math.floor($('#player').duration || 0) }) }); } catch {} });
+
+async function register(){ try { const data = await http('/auth/register', { method:'POST', body: JSON.stringify({ name: $('#authName').value, email: $('#authEmail').value, password: $('#authPassword').value }) }); state.token = data.token; localStorage.setItem('token', state.token); closePanels(); await loadMe(); await loadProgress(); await loadFavorites(); } catch(e){ toast(e.message); } }
+async function login(){ try { const data = await http('/auth/login', { method:'POST', body: JSON.stringify({ email: $('#authEmail').value, password: $('#authPassword').value }) }); state.token = data.token; localStorage.setItem('token', state.token); closePanels(); await loadMe(); await loadProgress(); await loadFavorites(); } catch(e){ toast(e.message); } }
+function logout(){ state.token=''; state.user=null; localStorage.removeItem('token'); $('#authBtn').classList.remove('hidden'); $('#settingsBtn').classList.add('hidden'); $('#adminBtn').classList.add('hidden'); $('#profiles').innerHTML=''; }
+async function saveSettings(){ try { const data = await http('/users/me', { method:'PUT', body: JSON.stringify({ name: $('#settingsName').value, preferred_language: $('#settingsLang').value, theme: $('#settingsTheme').value }) }); state.user = data.user; state.theme = data.user.theme; setLang(data.user.preferred_language); $('#lang').value = data.user.preferred_language; applyTheme(); closePanels(); } catch(e){ toast(e.message); } }
+async function createServer(){ try { await http('/servers', { method:'POST', body: JSON.stringify({ name: $('#serverName').value, region: $('#serverRegion').value, provider: $('#serverProvider').value, base_url: $('#serverBaseUrl').value, playback_type: 'hls', is_active: true }) }); await loadServers(); toast('Server created'); } catch(e){ toast(e.message); } }
+async function createCatalog(){ try { await http('/catalog', { method:'POST', body: JSON.stringify({ title: $('#catTitle').value, media_type: $('#catType').value, poster_url: $('#catPoster').value, backdrop_url: $('#catBackdrop').value, year: $('#catYear').value, overview: $('#catOverview').value, content_language: $('#catLanguage').value, is_featured: false }) }); await loadCatalog(); toast('Catalog item created'); } catch(e){ toast(e.message); } }
+async function toggleFavoriteCurrent(){ if (!state.user || !state.currentItem) return openAuth(); try { const exists = state.favorites.some(x => x.id === state.currentItem.id); if (exists) await http(`/favorites/${state.currentItem.id}`, { method:'DELETE' }); else await http('/favorites', { method:'POST', body: JSON.stringify({ catalog_id: state.currentItem.id, profile_id: state.activeProfile?.id || null }) }); await loadFavorites(); toast('Favorites updated'); } catch(e){ toast(e.message); } }
+
+window.addEventListener('load', bootstrap);
+</script>
+</body>
+</html>
