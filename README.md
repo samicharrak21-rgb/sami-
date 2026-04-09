@@ -69,3 +69,4 @@ docker compose up -d --build
 
 ## ملاحظات مهمة
 هذا المشروع **Starter Production-Oriented** وليس Netflix التجاري الكامل. لكنه منظم، وقابل للتوسعة، ومناسب للانطلاق الحقيقي بسرعة.
+"# sami" 
