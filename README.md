@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Cinemai Production SaaS Starter
 
 حزمة كاملة أقرب للإنتاج الفعلي لمنصة مشاهدة بطابع Netflix، مبنية لتكون **جاهزة للتشغيل على Docker / VPS**.
@@ -70,3 +71,6 @@ docker compose up -d --build
 ## ملاحظات مهمة
 هذا المشروع **Starter Production-Oriented** وليس Netflix التجاري الكامل. لكنه منظم، وقابل للتوسعة، ومناسب للانطلاق الحقيقي بسرعة.
 "# sami" 
+=======
+# sami-
+>>>>>>> b3b735eeb2812c93c9de77ae55a1a8a66bfab5d5
