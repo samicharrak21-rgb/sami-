@@ -284,4 +284,17 @@ app.use((err, _req, res, _next) => {
 });
 
 await initDb();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// عرض ملفات الواجهة
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+// عند فتح الموقع
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/index.html"));
+});
 app.listen(PORT, () => console.log(`Cinemai API listening on ${PORT}`));
